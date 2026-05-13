@@ -41,15 +41,14 @@ ironset html Firefox
 
 ## 原理
 
-`ironset` 做了 7 步操作来确保文件关联彻底生效：
+`ironset` 做了 6 步操作来确保文件关联彻底生效：
 
 1. 停止图标服务和 Dock（防止缓存干扰）
 2. 用 `duti` 绑定扩展名到应用
 3. 强制扫描应用包注册到 Launch Services
-4. 更新时间戳后再次注册（防止被 `lsregister` 因时间戳太旧跳过）
-5. 重置并重建 Launch Services 数据库
-6. 清理图标磁盘缓存
-7. 重启 Finder
+4. 重置并重建 Launch Services 数据库
+5. 清理图标磁盘缓存
+6. 重启 Finder
 
 ## License
 
