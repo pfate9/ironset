@@ -12,7 +12,29 @@ usage() {
     exit 1
 }
 
+require_command() {
+    local command_name="$1"
+
+    if ! command -v "$command_name" >/dev/null 2>&1; then
+        echo "错误: 缺少依赖 '$command_name'" >&2
+        return 1
+    fi
+}
+
 main() {
+    if [[ $# -ne 2 ]]; then
+        usage
+    fi
+
+    if [[ "$(uname -s)" != "Darwin" ]]; then
+        echo "错误: ironset 仅支持 macOS" >&2
+        return 1
+    fi
+
+    require_command duti
+    require_command mdfind
+    require_command mdls
+
     local ext="$1"
     local app_name="$2"
 
@@ -29,9 +51,12 @@ main() {
     fi
 
     if [[ ! -d "$app_path" ]]; then
-        echo "未找到: $app_path，尝试搜索…" >&2
-        app_path=$(mdfind "kMDItemKind == 'Application'" 2>/dev/null |
-            grep -i "/${app_name}.app$" | head -1)
+        echo "未找到: ${app_path}，尝试搜索…" >&2
+        app_path=$(
+            mdfind "kMDItemKind == 'Application'" 2>/dev/null |
+                grep -i "/${app_name}.app$" |
+                head -1 || true
+        )
         if [[ -z "$app_path" ]]; then
             echo "错误: 找不到应用 '$app_name'" >&2
             return 1
@@ -43,12 +68,16 @@ main() {
     local bundle_id
     bundle_id=$(mdls -name kMDItemCFBundleIdentifier -raw "$app_path" 2>/dev/null)
     if [[ -z "$bundle_id" ]]; then
-        echo "错误: 无法获取 bundle identifier（$app_path）" >&2
+        echo "错误: 无法获取 bundle identifier（${app_path}）" >&2
         return 1
     fi
-    echo "→ Bundle ID: $bundle_id"
+    echo "→ Bundle ID: ${bundle_id}"
 
     local lsreg="/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
+    if [[ ! -x "$lsreg" ]]; then
+        echo "错误: 找不到 lsregister" >&2
+        return 1
+    fi
 
     # 1. 先停止图标服务和 Dock，防止它们在后续步骤中缓存旧数据
     echo "→ 停止图标相关服务…"
@@ -56,7 +85,7 @@ main() {
     killall Dock 2>/dev/null || true
 
     # 2. duti 绑定
-    echo "→ 绑定 .${ext} → $bundle_id（all）"
+    echo "→ 绑定 .${ext} → ${bundle_id}（all）"
     duti -s "$bundle_id" ".${ext}" all
 
     # 3. 强制扫描应用包

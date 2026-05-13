@@ -14,7 +14,7 @@
 git clone https://github.com/YOUR_USERNAME/ironset.git
 
 # 加到 PATH（可选）
-ln -s "$(pwd)/ironset/ironset" /usr/local/bin/ironset
+ln -s "$(pwd)/ironset.sh" /usr/local/bin/ironset
 ```
 
 ## 用法
