@@ -11,7 +11,7 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/YOUR_USERNAME/ironset.git
+git clone https://gitee.com/fateg9/ironset.git
 
 # 加到 PATH（可选）
 ln -s "$(pwd)/ironset.sh" /usr/local/bin/ironset
@@ -28,6 +28,9 @@ ironset <扩展名> <应用名>
 ```bash
 # 用 Typora 打开 .md 文件
 ironset md Typora
+
+# 也可以带点号
+ironset .md Typora
 
 # 用 VS Code 打开 .py 文件（带空格的应用名加引号）
 ironset py 'Visual Studio Code'

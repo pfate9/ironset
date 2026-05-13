@@ -21,6 +21,37 @@ require_command() {
     fi
 }
 
+find_app() {
+    local app_name="$1"
+    local app_bundle="$app_name"
+
+    if [[ "$app_bundle" != *.app ]]; then
+        app_bundle="${app_bundle}.app"
+    fi
+
+    local app_bundle_lower
+    app_bundle_lower="$(printf '%s' "$app_bundle" | tr '[:upper:]' '[:lower:]')"
+    local candidate
+    for candidate in \
+        "/Applications/${app_bundle}" \
+        "${HOME}/Applications/${app_bundle}" \
+        "/System/Applications/${app_bundle}"; do
+        if [[ -d "$candidate" ]]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+
+    while IFS= read -r candidate; do
+        if [[ "$(basename "$candidate" | tr '[:upper:]' '[:lower:]')" == "$app_bundle_lower" ]]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done < <(mdfind "kMDItemKind == 'Application'" 2>/dev/null)
+
+    return 1
+}
+
 main() {
     if [[ $# -ne 2 ]]; then
         usage
@@ -37,30 +68,19 @@ main() {
 
     local ext="$1"
     local app_name="$2"
+    ext="${ext#.}"
 
     if [[ -z "$ext" || -z "$app_name" ]]; then
         usage
     fi
 
-    # 补全 .app 后缀
     local app_path
-    if [[ "$app_name" == *.app ]]; then
-        app_path="/Applications/$app_name"
-    else
-        app_path="/Applications/${app_name}.app"
+    if ! app_path="$(find_app "$app_name")"; then
+        echo "错误: 找不到应用 '$app_name'" >&2
+        return 1
     fi
 
-    if [[ ! -d "$app_path" ]]; then
-        echo "未找到: ${app_path}，尝试搜索…" >&2
-        app_path=$(
-            mdfind "kMDItemKind == 'Application'" 2>/dev/null |
-                grep -i "/${app_name}.app$" |
-                head -1 || true
-        )
-        if [[ -z "$app_path" ]]; then
-            echo "错误: 找不到应用 '$app_name'" >&2
-            return 1
-        fi
+    if [[ "$app_path" != "/Applications/"* ]]; then
         echo "已在 $app_path 找到"
     fi
 
